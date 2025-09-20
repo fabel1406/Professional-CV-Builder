@@ -1,70 +1,86 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-g" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Professional CV Builder</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      @media print {
-        /* Set page properties for consistent A4 output */
-        @page {
-          size: A4;
-          margin: 0;
-        }
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Professional CV Builder</title>
+  
+  <!-- Tailwind CSS from CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Global Styles & Print Configuration -->
+  <style>
+    /* Custom scrollbar for better aesthetics on Webkit browsers */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9; /* slate-100 */
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #94a3b8; /* slate-400 */
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #64748b; /* slate-500 */
+    }
+    
+    /* Global base text color */
+    body {
+        color: #334155; /* slate-700 */
+    }
+    
+    /* Animation for landing page sections */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in-section {
+        opacity: 0;
+        animation: fadeIn 0.8s ease-out forwards;
+    }
 
-        /* Basic body reset for printing */
-        body {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-          margin: 0;
-          padding: 0;
-          background-color: #fff;
-        }
-
-        /* Hide the entire on-screen UI. This is the most critical rule. */
-        .no-print {
-          display: none !important;
-        }
-        
-        /* 
-         * Target the CV element dedicated to printing.
-         * This overrides any screen-specific styling (like max-width, shadows, borders)
-         * and ensures the CV component itself fills the entire printed page.
-         */
-        #cv-print-version {
-           box-shadow: none !important;
-           border-radius: 0 !important;
-           border: none !important;
-           margin: 0 !important;
-           padding: 0 !important;
-           max-width: 100% !important; /* Override component's max-width */
-           transform: none !important; /* Reset any scaling */
-           width: 210mm; /* A4 width */
-           height: 297mm; /* A4 height */
-           overflow: hidden; /* Prevent any potential overflow issues */
-        }
-
-        /* Ensure the inner container of the CV component also expands to fill the page */
-        #cv-print-version > div {
-            height: 100%;
-            border-radius: 0 !important; /* Ensure inner elements also have no rounding */
-        }
+    /* Styles for printing the CV */
+    @media print {
+      body * {
+        visibility: hidden;
       }
-    </style>
+      #cv-for-print, #cv-for-print * {
+        visibility: visible;
+      }
+      #cv-for-print {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        transform: scale(1) !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+  
+  <!-- Import Map for ES Modules -->
   <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
+  {
+    "imports": {
+      "@google/genai": "https://aistudiocdn.com/@google/genai@^1.20.0",
+      "react/": "https://aistudiocdn.com/react@^19.1.1/",
+      "react": "https://aistudiocdn.com/react@^19.1.1",
+      "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
+    }
   }
-}
-</script>
+  </script>
 </head>
-  <body class="bg-slate-100">
-    <div id="root"></div>
-    <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+<body class="bg-slate-100">
+  <!-- The root element where the React app will be mounted -->
+  <div id="root"></div>
+  
+  <!-- Main script to load the React application -->
+  <script type="module" src="/index.tsx"></script>
+</body>
 </html>

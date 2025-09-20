@@ -2,12 +2,19 @@ import React from 'react';
 import type { CVData, Experience, Education, Skill, Language } from '../types';
 import type { Translations } from '../translations';
 import TrashIcon from './icons/TrashIcon';
+import SparklesIcon from './icons/SparklesIcon';
+
 
 interface CVFormProps {
   data: CVData;
   onUpdate: (newData: CVData) => void;
   t: Translations;
+  onGenerateSummary: () => void;
+  isGenerating: boolean;
 }
+
+// FIX: Create a specific type for array sections of CVData to ensure type safety in dynamic functions.
+type ArrayCVDataKey = 'experience' | 'education' | 'skills' | 'languages';
 
 const InputField: React.FC<{ label: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string, type?: string, name?:string }> = ({ label, value, onChange, placeholder, type="text", name }) => (
   <div className="mb-4">
@@ -24,7 +31,7 @@ const TextAreaField: React.FC<{ label: string; value: string; onChange: (e: Reac
 );
 
 
-const CVForm: React.FC<CVFormProps> = ({ data, onUpdate, t }) => {
+const CVForm: React.FC<CVFormProps> = ({ data, onUpdate, t, onGenerateSummary, isGenerating }) => {
 
   const handlePersonalInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -52,7 +59,7 @@ const CVForm: React.FC<CVFormProps> = ({ data, onUpdate, t }) => {
   };
   
   const handleDynamicChange = <T extends Experience | Education | Skill | Language>(
-    section: keyof CVData,
+    section: ArrayCVDataKey,
     index: number,
     field: keyof T,
     value: string
@@ -64,12 +71,12 @@ const CVForm: React.FC<CVFormProps> = ({ data, onUpdate, t }) => {
       onUpdate({ ...data, [section]: updatedItems });
   };
 
-  const addDynamicItem = <T,>(section: keyof CVData, newItem: T) => {
+  const addDynamicItem = <T,>(section: ArrayCVDataKey, newItem: T) => {
     const sectionData = data[section] as T[];
     onUpdate({ ...data, [section]: [...sectionData, newItem] });
   };
   
-  const removeDynamicItem = (section: keyof CVData, index: number) => {
+  const removeDynamicItem = (section: ArrayCVDataKey, index: number) => {
     const sectionData = data[section] as any[];
     onUpdate({ ...data, [section]: sectionData.filter((_, i) => i !== index) });
   };
@@ -98,8 +105,26 @@ const CVForm: React.FC<CVFormProps> = ({ data, onUpdate, t }) => {
       </div>
       
       <div className="border-b border-slate-200 pb-6 mb-6">
-        <h3 className="text-xl font-semibold text-slate-700 mb-4">{t.summary}</h3>
-        <TextAreaField label={t.summaryLabel} value={data.summary} onChange={handleSummaryChange} placeholder={t.summaryPlaceholder}/>
+        <div className="flex justify-between items-center mb-2">
+            <h3 className="text-xl font-semibold text-slate-700">{t.summary}</h3>
+            <button
+                onClick={onGenerateSummary}
+                disabled={isGenerating}
+                className="flex items-center gap-2 bg-purple-600 text-white px-3 py-1.5 rounded-md hover:bg-purple-700 transition text-sm disabled:bg-purple-300"
+                title={t.aiAssistTooltip}
+            >
+                <SparklesIcon className="w-4 h-4" />
+                {isGenerating ? t.loading : t.generateWithAI}
+            </button>
+        </div>
+        <textarea 
+          value={data.summary} 
+          onChange={handleSummaryChange} 
+          placeholder={t.summaryPlaceholder} 
+          rows={5} 
+          className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white" 
+        />
+        <p className="text-xs text-slate-500 mt-2">{t.aiSummaryHelperText}</p>
       </div>
       
       <div className="border-b border-slate-200 pb-6 mb-6">

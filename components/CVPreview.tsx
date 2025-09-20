@@ -1,6 +1,6 @@
 import React from 'react';
-import type { CVData } from '../types';
-import type { Template, FontFamily, TextAlign } from '../App';
+// FIX: import from `../types` instead of `../App`
+import type { CVData, Template, FontFamily, TextAlign } from '../types';
 import type { Translations } from '../translations';
 import EnvelopeIcon from './icons/EnvelopeIcon';
 import PhoneIcon from './icons/PhoneIcon';

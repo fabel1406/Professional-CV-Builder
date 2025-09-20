@@ -1,12 +1,17 @@
+// FIX: Define all necessary types for the application.
+export type Template = 'modern' | 'classic' | 'creative';
+export type FontFamily = 'sans' | 'serif' | 'mono';
+export type TextAlign = 'left' | 'center' | 'justify';
+export type LanguageKey = 'en' | 'es';
 
 export interface PersonalInfo {
   name: string;
   title: string;
-  photo: string;
   email: string;
   phone: string;
   location: string;
   website: string;
+  photo: string;
 }
 
 export interface Experience {
@@ -19,7 +24,7 @@ export interface Experience {
 }
 
 export interface Education {
-  id: string;
+  id:string;
   degree: string;
   institution: string;
   startDate: string;
