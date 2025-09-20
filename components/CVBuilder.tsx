@@ -1,5 +1,6 @@
+
 import React, { useState, useRef } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI } from '@google/genai';
 import CVForm from './CVForm';
 import CVPreview from './CVPreview';
 import PrintPreviewModal from './PrintPreviewModal';
@@ -14,6 +15,7 @@ import AlignCenterIcon from './icons/AlignCenterIcon';
 import AlignJustifyIcon from './icons/AlignJustifyIcon';
 import PaintBrushIcon from './icons/PaintBrushIcon';
 import ArrowLeftIcon from './icons/ArrowLeftIcon';
+import XMarkIcon from './icons/XMarkIcon';
 
 interface CVBuilderProps {
   t: Translations;
@@ -30,6 +32,7 @@ const CVBuilder: React.FC<CVBuilderProps> = ({ t, language, setLanguage, onGoBac
   const [accentColor, setAccentColor] = useState<string>('#3b82f6');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isPrintModalOpen, setPrintModalOpen] = useState<boolean>(false);
+  const [notification, setNotification] = useState<string | null>(null);
   
   const cvPreviewRef = useRef<HTMLDivElement>(null);
 
@@ -38,17 +41,26 @@ const CVBuilder: React.FC<CVBuilderProps> = ({ t, language, setLanguage, onGoBac
   };
   
   const handleGenerateSummary = async () => {
+    setNotification(null);
     const filledExperience = cvData.experience.filter(e => e.title && e.company);
     const filledSkills = cvData.skills.filter(s => s.name);
 
     if (filledExperience.length === 0 && filledSkills.length === 0) {
-      alert(t.aiEmptyError);
+      setNotification(t.aiEmptyError);
+      setTimeout(() => setNotification(null), 5000);
       return;
     }
 
     setIsGenerating(true);
     try {
-      const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+      const apiKey = process.env.API_KEY;
+      if (!apiKey) {
+        console.error("API key not found. Make sure it's set in your environment variables.");
+        throw new Error("API key is not available.");
+      }
+      
+      const ai = new GoogleGenAI({ apiKey });
+      
       const prompt = `Based on the following CV data, write a professional and compelling summary of 2-3 sentences in ${language === 'es' ? 'Spanish' : 'English'}:
       Name: ${cvData.personalInfo.name || 'the candidate'}
       Title: ${cvData.personalInfo.title || 'a professional'}
@@ -57,16 +69,20 @@ const CVBuilder: React.FC<CVBuilderProps> = ({ t, language, setLanguage, onGoBac
 
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: prompt
+        contents: prompt,
       });
 
       const summaryText = response.text;
+
       if (summaryText) {
         setCvData(prev => ({ ...prev, summary: summaryText.trim() }));
+      } else {
+        throw new Error("Empty summary received from AI.");
       }
     } catch (error) {
       console.error("Error generating summary:", error);
-      alert(t.aiError);
+      setNotification(t.aiError);
+      setTimeout(() => setNotification(null), 5000);
     } finally {
       setIsGenerating(false);
     }
@@ -80,128 +96,156 @@ const CVBuilder: React.FC<CVBuilderProps> = ({ t, language, setLanguage, onGoBac
   );
 
   return (
-    <div className="min-h-screen">
-      <header className="bg-white shadow-md sticky top-0 z-10 no-print">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={onGoBack}
-                className="text-slate-600 hover:text-blue-600 p-2 rounded-full transition -ml-2"
-                aria-label={t.goBack}
-              >
-                <ArrowLeftIcon className="w-6 h-6" />
-              </button>
-              <h1 className="text-2xl font-bold text-slate-800">{t.appName}</h1>
-            </div>
-            <div className="flex items-center gap-4">
-                <LanguageSwitcher />
-                <button 
-                  onClick={() => setPrintModalOpen(true)}
-                  className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 transition"
-                >
-                  <EyeIcon className="w-5 h-5"/>
-                  {t.printPreviewTitle}
-                </button>
-                <button
-                  onClick={handlePrint}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 transition"
-                >
-                    <PrinterIcon className="w-5 h-5" />
-                    {t.print}
-                </button>
-            </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 space-y-8">
-          
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><LayoutTemplateIcon />{t.customize}</h2>
-            
-            {/* Template */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-600 mb-2">{t.template}</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['modern', 'classic', 'creative'] as Template[]).map(tmpl => (
-                  <button key={tmpl} onClick={() => setTemplate(tmpl)} className={`capitalize text-sm py-2 px-3 rounded-md transition ${template === tmpl ? 'bg-blue-500 text-white' : 'bg-slate-200 hover:bg-slate-300'}`}>{t[`template${tmpl.charAt(0).toUpperCase() + tmpl.slice(1)}` as keyof Translations] || tmpl}</button>
-                ))}
-              </div>
-            </div>
-
-            {/* Font Family */}
-             <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-600 mb-2">{t.fontFamily}</label>
-              <div className="grid grid-cols-3 gap-2">
-                {(['sans', 'serif', 'mono'] as FontFamily[]).map(f => (
-                   <button key={f} onClick={() => setFontFamily(f)} className={`capitalize text-sm py-2 px-3 rounded-md transition ${fontFamily === f ? 'bg-blue-500 text-white' : 'bg-slate-200 hover:bg-slate-300'}`}>{f}</button>
-                ))}
-              </div>
-            </div>
-
-            {/* Text Align */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-slate-600 mb-2">{t.textAlign}</label>
-              <div className="flex items-center gap-2 bg-slate-200 rounded-md p-1">
-                 {(['left', 'center', 'justify'] as TextAlign[]).map(a => (
-                   <button key={a} onClick={() => setTextAlign(a)} className={`flex-1 p-2 rounded-md transition ${textAlign === a ? 'bg-white shadow' : 'hover:bg-slate-100'}`}>
-                     {a === 'left' && <AlignLeftIcon className="mx-auto" />}
-                     {a === 'center' && <AlignCenterIcon className="mx-auto" />}
-                     {a === 'justify' && <AlignJustifyIcon className="mx-auto" />}
-                   </button>
-                 ))}
-              </div>
-            </div>
-
-             {/* Accent Color */}
-             <div>
-               <label htmlFor="accent-color" className="block text-sm font-medium text-slate-600 mb-2">{t.accentColor}</label>
-               <div className="relative">
-                <PaintBrushIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <input id="accent-color" type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)} className="w-full h-10 pl-10 pr-2 py-1 border border-slate-300 rounded-md" />
-               </div>
-            </div>
-          </div>
-                    
-          <CVForm 
-            data={cvData} 
-            onUpdate={setCvData} 
-            t={t} 
-            onGenerateSummary={handleGenerateSummary} 
-            isGenerating={isGenerating} 
-          />
-        </div>
-
-        <div className="lg:col-span-2 relative">
-          <div ref={cvPreviewRef} className="sticky top-24">
-            <div className="flex justify-center items-start p-4">
-              <div className="transform scale-[0.8] origin-top">
-                <CVPreview
-                  data={cvData}
-                  template={template}
-                  fontFamily={fontFamily}
-                  textAlign={textAlign}
-                  accentColor={accentColor}
-                  t={t}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
+    <>
+      {/* Dedicated container for printing */}
+      <div className="print-only">
+        <CVPreview
+          id="cv-for-print"
+          data={cvData}
+          template={template}
+          fontFamily={fontFamily}
+          textAlign={textAlign}
+          accentColor={accentColor}
+          t={t}
+        />
       </div>
-      
-      <PrintPreviewModal isOpen={isPrintModalOpen} onClose={() => setPrintModalOpen(false)} onPrint={handlePrint} t={t}>
-         <CVPreview
-            id="cv-for-print"
-            data={cvData}
-            template={template}
-            fontFamily={fontFamily}
-            textAlign={textAlign}
-            accentColor={accentColor}
-            t={t}
-          />
-      </PrintPreviewModal>
-    </div>
+
+      {/* Main application container, which will be hidden during printing */}
+      <div className="min-h-screen screen-only">
+        <header className="bg-white shadow-md sticky top-0 z-10 no-print">
+          <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={onGoBack}
+                  className="text-slate-600 hover:text-blue-600 p-2 rounded-full transition -ml-2"
+                  aria-label={t.goBack}
+                >
+                  <ArrowLeftIcon className="w-6 h-6" />
+                </button>
+                <h1 className="text-2xl font-bold text-slate-800">{t.appName}</h1>
+              </div>
+              <div className="flex items-center gap-4">
+                  <LanguageSwitcher />
+                  <button 
+                    onClick={() => setPrintModalOpen(true)}
+                    className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 transition"
+                  >
+                    <EyeIcon className="w-5 h-5"/>
+                    {t.printPreviewTitle}
+                  </button>
+                  <button
+                    onClick={handlePrint}
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md shadow-sm hover:bg-blue-700 transition"
+                  >
+                      <PrinterIcon className="w-5 h-5" />
+                      {t.print}
+                  </button>
+              </div>
+          </div>
+        </header>
+
+        {/* Toast Notification */}
+        {notification && (
+            <div className="fixed top-24 right-8 z-50 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md shadow-lg flex items-center gap-4 animate-slide-in-right" role="alert">
+              <p>{notification}</p>
+              <button
+                  onClick={() => setNotification(null)}
+                  className="text-red-500 hover:text-red-700 p-1"
+                  aria-label="Close"
+              >
+                  <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+
+        <div className="container mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1 space-y-8">
+            <div className="bg-white p-6 rounded-lg shadow-lg">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2"><LayoutTemplateIcon />{t.customize}</h2>
+              
+              {/* Template */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-600 mb-2">{t.template}</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['modern', 'classic', 'creative'] as Template[]).map(tmpl => (
+                    <button key={tmpl} onClick={() => setTemplate(tmpl)} className={`capitalize text-sm py-2 px-3 rounded-md transition ${template === tmpl ? 'bg-blue-500 text-white' : 'bg-slate-200 hover:bg-slate-300'}`}>{t[`template${tmpl.charAt(0).toUpperCase() + tmpl.slice(1)}` as keyof Translations] || tmpl}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Font Family */}
+               <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-600 mb-2">{t.fontFamily}</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(['sans', 'serif', 'mono'] as FontFamily[]).map(f => (
+                     <button key={f} onClick={() => setFontFamily(f)} className={`capitalize text-sm py-2 px-3 rounded-md transition ${fontFamily === f ? 'bg-blue-500 text-white' : 'bg-slate-200 hover:bg-slate-300'}`}>{f}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Text Align */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-slate-600 mb-2">{t.textAlign}</label>
+                <div className="flex items-center gap-2 bg-slate-200 rounded-md p-1">
+                   {(['left', 'center', 'justify'] as TextAlign[]).map(a => (
+                     <button key={a} onClick={() => setTextAlign(a)} className={`flex-1 p-2 rounded-md transition ${textAlign === a ? 'bg-white shadow' : 'hover:bg-slate-100'}`}>
+                       {a === 'left' && <AlignLeftIcon className="mx-auto" />}
+                       {a === 'center' && <AlignCenterIcon className="mx-auto" />}
+                       {a === 'justify' && <AlignJustifyIcon className="mx-auto" />}
+                     </button>
+                   ))}
+                </div>
+              </div>
+
+               {/* Accent Color */}
+               <div>
+                 <label htmlFor="accent-color" className="block text-sm font-medium text-slate-600 mb-2">{t.accentColor}</label>
+                 <div className="relative">
+                  <PaintBrushIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <input id="accent-color" type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)} className="w-full h-10 pl-10 pr-2 py-1 border border-slate-300 rounded-md" />
+                 </div>
+              </div>
+            </div>
+                      
+            <CVForm 
+              data={cvData} 
+              onUpdate={setCvData} 
+              t={t} 
+              onGenerateSummary={handleGenerateSummary} 
+              isGenerating={isGenerating} 
+            />
+          </div>
+
+          <div className="lg:col-span-2 relative">
+            <div ref={cvPreviewRef} className="sticky top-24">
+              <div className="flex justify-center items-start p-4">
+                <div className="transform scale-[0.8] origin-top">
+                  <CVPreview
+                    data={cvData}
+                    template={template}
+                    fontFamily={fontFamily}
+                    textAlign={textAlign}
+                    accentColor={accentColor}
+                    t={t}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <PrintPreviewModal isOpen={isPrintModalOpen} onClose={() => setPrintModalOpen(false)} onPrint={handlePrint} t={t}>
+           <CVPreview
+              data={cvData}
+              template={template}
+              fontFamily={fontFamily}
+              textAlign={textAlign}
+              accentColor={accentColor}
+              t={t}
+            />
+        </PrintPreviewModal>
+      </div>
+    </>
   );
 };
 

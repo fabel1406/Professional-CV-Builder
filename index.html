@@ -41,25 +41,52 @@
         animation: fadeIn 0.8s ease-out forwards;
     }
 
+    /* Animation for notification toast */
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    .animate-slide-in-right {
+        animation: slideInRight 0.4s ease-out forwards;
+    }
+
     /* Styles for printing the CV */
     @media print {
-      body * {
-        visibility: hidden;
+      /* Hide the main application container from print */
+      .screen-only {
+        display: none !important;
       }
-      #cv-for-print, #cv-for-print * {
-        visibility: visible;
+
+      /* Show the dedicated print container */
+      .print-only {
+        display: block !important;
       }
+      
+      /* Ensure the CV inside the print container is styled correctly */
       #cv-for-print {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
+        margin: 0;
         transform: scale(1) !important;
         box-shadow: none !important;
         border: none !important;
+        width: 100%;
+        height: 100%;
       }
+      
       .no-print {
         display: none !important;
+      }
+    }
+    
+    @media screen {
+      /* Hide the dedicated print container from the screen */
+      .print-only {
+        display: none;
       }
     }
   </style>
