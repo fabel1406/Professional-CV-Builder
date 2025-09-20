@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-g" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Professional CV Builder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @media print {
+        /* Set page properties for consistent A4 output */
+        @page {
+          size: A4;
+          margin: 0;
+        }
+
+        /* Basic body reset for printing */
+        body {
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+          margin: 0;
+          padding: 0;
+          background-color: #fff;
+        }
+
+        /* Hide the entire on-screen UI. This is the most critical rule. */
+        .no-print {
+          display: none !important;
+        }
+        
+        /* 
+         * Target the CV element dedicated to printing.
+         * This overrides any screen-specific styling (like max-width, shadows, borders)
+         * and ensures the CV component itself fills the entire printed page.
+         */
+        #cv-print-version {
+           box-shadow: none !important;
+           border-radius: 0 !important;
+           border: none !important;
+           margin: 0 !important;
+           padding: 0 !important;
+           max-width: 100% !important; /* Override component's max-width */
+           transform: none !important; /* Reset any scaling */
+           width: 210mm; /* A4 width */
+           height: 297mm; /* A4 height */
+           overflow: hidden; /* Prevent any potential overflow issues */
+        }
+
+        /* Ensure the inner container of the CV component also expands to fill the page */
+        #cv-print-version > div {
+            height: 100%;
+            border-radius: 0 !important; /* Ensure inner elements also have no rounding */
+        }
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.1.1/",
+    "react": "https://aistudiocdn.com/react@^19.1.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
+  }
+}
+</script>
+</head>
+  <body class="bg-slate-100">
+    <div id="root"></div>
+    <script src="https://unpkg.com/html-docx-js/dist/html-docx.js"></script>
+  </body>
+</html>
