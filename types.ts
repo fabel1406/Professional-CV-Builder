@@ -1,8 +1,10 @@
 // FIX: Define all necessary types for the application.
-export type Template = 'modern' | 'classic' | 'creative';
-export type FontFamily = 'sans' | 'serif' | 'mono';
+export type Template = 'modern' | 'classic' | 'creative' | 'professional';
+export type FontFamily = 'Arial' | 'Calibri' | 'Courier New' | 'DejaVu Sans' | 'Garamond' | 'Georgia' | 'Helvetica' | 'Lato' | 'Noto Sans' | 'Noto Serif' | 'Poppins' | 'Times New Roman' | 'Trebuchet MS';
 export type TextAlign = 'left' | 'center' | 'justify';
+export type FontSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 export type LanguageKey = 'en' | 'es';
+export type ReorderableSection = 'experience' | 'education' | 'courses';
 
 export interface PersonalInfo {
   name: string;
@@ -31,6 +33,13 @@ export interface Education {
   endDate: string;
 }
 
+export interface Course {
+  id: string;
+  name: string;
+  institution: string;
+  endDate: string;
+}
+
 export interface Skill {
   id: string;
   name: string;
@@ -47,6 +56,7 @@ export interface CVData {
   summary: string;
   experience: Experience[];
   education: Education[];
+  courses: Course[];
   skills: Skill[];
   languages: Language[];
 }

@@ -1,20 +1,21 @@
-import React from 'react';
-import type { CVData, Experience, Education, Skill, Language } from '../types';
+
+import React, { useRef, useState } from 'react';
+import type { CVData, Experience, Education, Skill, Language, ReorderableSection, Course } from '../types';
 import type { Translations } from '../translations';
 import TrashIcon from './icons/TrashIcon';
-import SparklesIcon from './icons/SparklesIcon';
+import Bars3Icon from './icons/Bars3Icon';
 
 
 interface CVFormProps {
   data: CVData;
   onUpdate: (newData: CVData) => void;
   t: Translations;
-  onGenerateSummary: () => void;
-  isGenerating: boolean;
+  sectionsOrder: ReorderableSection[];
+  onSectionsOrderChange: (newOrder: ReorderableSection[]) => void;
 }
 
 // FIX: Create a specific type for array sections of CVData to ensure type safety in dynamic functions.
-type ArrayCVDataKey = 'experience' | 'education' | 'skills' | 'languages';
+type ArrayCVDataKey = 'experience' | 'education' | 'skills' | 'languages' | 'courses';
 
 const InputField: React.FC<{ label: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string, type?: string, name?:string }> = ({ label, value, onChange, placeholder, type="text", name }) => (
   <div className="mb-4">
@@ -31,7 +32,38 @@ const TextAreaField: React.FC<{ label: string; value: string; onChange: (e: Reac
 );
 
 
-const CVForm: React.FC<CVFormProps> = ({ data, onUpdate, t, onGenerateSummary, isGenerating }) => {
+const CVForm: React.FC<CVFormProps> = ({ data, onUpdate, t, sectionsOrder, onSectionsOrderChange }) => {
+  
+  // Drag and Drop state
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    dragItem.current = index;
+    setDraggedIndex(index);
+  };
+  
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    if (draggedIndex === null || draggedIndex === index) return;
+    dragOverItem.current = index;
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
+        const newOrder = [...sectionsOrder];
+        const draggedItemContent = newOrder.splice(dragItem.current, 1)[0];
+        newOrder.splice(dragOverItem.current, 0, draggedItemContent);
+        onSectionsOrderChange(newOrder);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
+
 
   const handlePersonalInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -58,7 +90,7 @@ const CVForm: React.FC<CVFormProps> = ({ data, onUpdate, t, onGenerateSummary, i
     onUpdate({ ...data, summary: e.target.value });
   };
   
-  const handleDynamicChange = <T extends Experience | Education | Skill | Language>(
+  const handleDynamicChange = <T extends Experience | Education | Skill | Language | Course>(
     section: ArrayCVDataKey,
     index: number,
     field: keyof T,
@@ -88,6 +120,57 @@ const CVForm: React.FC<CVFormProps> = ({ data, onUpdate, t, onGenerateSummary, i
     </div>
   );
 
+  const sectionComponents: Record<ReorderableSection, React.ReactNode> = {
+    experience: (
+      <div className="border-b border-slate-200 pb-6 mb-6">
+        {renderSectionHeader(t.experience, () => addDynamicItem('experience', { id: Date.now().toString(), title: '', company: '', startDate: '', endDate: '', description: '' }))}
+        {data.experience.map((exp, index) => (
+          <div key={exp.id} className="p-4 border border-slate-200 rounded-md mb-4 relative">
+            <button onClick={() => removeDynamicItem('experience', index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700"><TrashIcon /></button>
+            <InputField label={t.jobTitle} value={exp.title} onChange={e => handleDynamicChange<Experience>('experience', index, 'title', e.target.value)} />
+            <InputField label={t.company} value={exp.company} onChange={e => handleDynamicChange<Experience>('experience', index, 'company', e.target.value)} />
+            <div className="grid grid-cols-2 gap-4">
+              <InputField label={t.startDate} value={exp.startDate} onChange={e => handleDynamicChange<Experience>('experience', index, 'startDate', e.target.value)} placeholder={t.startDatePlaceholder} />
+              <InputField label={t.endDate} value={exp.endDate} onChange={e => handleDynamicChange<Experience>('experience', index, 'endDate', e.target.value)} placeholder={t.endDatePlaceholder} />
+            </div>
+            <TextAreaField label={t.description} value={exp.description} onChange={e => handleDynamicChange<Experience>('experience', index, 'description', e.target.value)} placeholder={t.descriptionPlaceholder} />
+          </div>
+        ))}
+      </div>
+    ),
+    education: (
+      <div className="border-b border-slate-200 pb-6 mb-6">
+        {renderSectionHeader(t.education, () => addDynamicItem('education', { id: Date.now().toString(), degree: '', institution: '', startDate: '', endDate: '' }))}
+        {data.education.map((edu, index) => (
+           <div key={edu.id} className="p-4 border border-slate-200 rounded-md mb-4 relative">
+            <button onClick={() => removeDynamicItem('education', index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700"><TrashIcon /></button>
+            <InputField label={t.degree} value={edu.degree} onChange={e => handleDynamicChange<Education>('education', index, 'degree', e.target.value)} />
+            <InputField label={t.institution} value={edu.institution} onChange={e => handleDynamicChange<Education>('education', index, 'institution', e.target.value)} />
+             <div className="grid grid-cols-2 gap-4">
+               <InputField label={t.startDate} value={edu.startDate} onChange={e => handleDynamicChange<Education>('education', index, 'startDate', e.target.value)} placeholder={t.eduStartDatePlaceholder} />
+               <InputField label={t.endDate} value={edu.endDate} onChange={e => handleDynamicChange<Education>('education', index, 'endDate', e.target.value)} placeholder={t.eduEndDatePlaceholder} />
+            </div>
+          </div>
+        ))}
+      </div>
+    ),
+    courses: (
+      <div className="border-b border-slate-200 pb-6 mb-6">
+        {renderSectionHeader(t.courses, () => addDynamicItem('courses', { id: Date.now().toString(), name: '', institution: '', endDate: '' }))}
+        {data.courses.map((course, index) => (
+           <div key={course.id} className="p-4 border border-slate-200 rounded-md mb-4 relative">
+            <button onClick={() => removeDynamicItem('courses', index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700"><TrashIcon /></button>
+            <InputField label={t.courseName} value={course.name} onChange={e => handleDynamicChange<Course>('courses', index, 'name', e.target.value)} />
+            <div className="grid grid-cols-2 gap-4">
+              <InputField label={t.courseInstitution} value={course.institution} onChange={e => handleDynamicChange<Course>('courses', index, 'institution', e.target.value)} />
+              <InputField label={t.courseEndDate} value={course.endDate} onChange={e => handleDynamicChange<Course>('courses', index, 'endDate', e.target.value)} placeholder={t.courseEndDatePlaceholder} />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  };
+
   return (
     <div className="p-8 bg-white rounded-lg shadow-lg">
       <div className="border-b border-slate-200 pb-6 mb-6">
@@ -105,18 +188,7 @@ const CVForm: React.FC<CVFormProps> = ({ data, onUpdate, t, onGenerateSummary, i
       </div>
       
       <div className="border-b border-slate-200 pb-6 mb-6">
-        <div className="flex justify-between items-center mb-2">
-            <h3 className="text-xl font-semibold text-slate-700">{t.summary}</h3>
-            <button
-                onClick={onGenerateSummary}
-                disabled={isGenerating}
-                className="flex items-center gap-2 bg-purple-600 text-white px-3 py-1.5 rounded-md hover:bg-purple-700 transition text-sm disabled:bg-purple-300"
-                title={t.aiAssistTooltip}
-            >
-                <SparklesIcon className="w-4 h-4" />
-                {isGenerating ? t.loading : t.generateWithAI}
-            </button>
-        </div>
+        <h3 className="text-xl font-semibold text-slate-700 mb-2">{t.summary}</h3>
         <textarea 
           value={data.summary} 
           onChange={handleSummaryChange} 
@@ -127,35 +199,34 @@ const CVForm: React.FC<CVFormProps> = ({ data, onUpdate, t, onGenerateSummary, i
         <p className="text-xs text-slate-500 mt-2">{t.aiSummaryHelperText}</p>
       </div>
       
-      <div className="border-b border-slate-200 pb-6 mb-6">
-        {renderSectionHeader(t.experience, () => addDynamicItem('experience', { id: Date.now().toString(), title: '', company: '', startDate: '', endDate: '', description: '' }))}
-        {data.experience.map((exp, index) => (
-          <div key={exp.id} className="p-4 border border-slate-200 rounded-md mb-4 relative">
-            <button onClick={() => removeDynamicItem('experience', index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700"><TrashIcon /></button>
-            <InputField label={t.jobTitle} value={exp.title} onChange={e => handleDynamicChange<Experience>('experience', index, 'title', e.target.value)} />
-            <InputField label={t.company} value={exp.company} onChange={e => handleDynamicChange<Experience>('experience', index, 'company', e.target.value)} />
-            <div className="grid grid-cols-2 gap-4">
-              <InputField label={t.startDate} value={exp.startDate} onChange={e => handleDynamicChange<Experience>('experience', index, 'startDate', e.target.value)} placeholder={t.startDatePlaceholder} />
-              <InputField label={t.endDate} value={exp.endDate} onChange={e => handleDynamicChange<Experience>('experience', index, 'endDate', e.target.value)} placeholder={t.endDatePlaceholder} />
+      <div>
+        {sectionsOrder.map((sectionKey, index) => {
+          const isDragging = draggedIndex === index;
+          const isDragOver = dragOverIndex === index;
+          const dropAfter = draggedIndex !== null && draggedIndex < index;
+
+          const placeholder = <div className="h-28 bg-sky-100/50 rounded-lg border-2 border-dashed border-sky-300 my-4 transition-all duration-300"></div>;
+
+          return (
+            <div key={sectionKey}>
+              {isDragOver && !dropAfter && placeholder}
+              <div
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragEnter={(e) => handleDragEnter(e, index)}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => e.preventDefault()}
+                className={`group relative transition-all duration-300 ease-in-out ${isDragging ? 'bg-white opacity-80 shadow-2xl shadow-sky-300/50 rounded-lg transform scale-[1.02] -rotate-1 z-10' : 'bg-transparent'}`}
+              >
+                <div className="absolute -left-7 top-0 h-full flex items-center pt-1 opacity-20 group-hover:opacity-100 cursor-grab transition-opacity" title={`Drag to reorder ${sectionKey}`}>
+                  <Bars3Icon className="w-6 h-6 text-slate-400" />
+                </div>
+                {sectionComponents[sectionKey]}
+              </div>
+              {isDragOver && dropAfter && placeholder}
             </div>
-            <TextAreaField label={t.description} value={exp.description} onChange={e => handleDynamicChange<Experience>('experience', index, 'description', e.target.value)} placeholder={t.descriptionPlaceholder} />
-          </div>
-        ))}
-      </div>
-      
-      <div className="border-b border-slate-200 pb-6 mb-6">
-        {renderSectionHeader(t.education, () => addDynamicItem('education', { id: Date.now().toString(), degree: '', institution: '', startDate: '', endDate: '' }))}
-        {data.education.map((edu, index) => (
-           <div key={edu.id} className="p-4 border border-slate-200 rounded-md mb-4 relative">
-            <button onClick={() => removeDynamicItem('education', index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700"><TrashIcon /></button>
-            <InputField label={t.degree} value={edu.degree} onChange={e => handleDynamicChange<Education>('education', index, 'degree', e.target.value)} />
-            <InputField label={t.institution} value={edu.institution} onChange={e => handleDynamicChange<Education>('education', index, 'institution', e.target.value)} />
-             <div className="grid grid-cols-2 gap-4">
-               <InputField label={t.startDate} value={edu.startDate} onChange={e => handleDynamicChange<Education>('education', index, 'startDate', e.target.value)} placeholder={t.eduStartDatePlaceholder} />
-               <InputField label={t.endDate} value={edu.endDate} onChange={e => handleDynamicChange<Education>('education', index, 'endDate', e.target.value)} placeholder={t.eduEndDatePlaceholder} />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       
        <div className="border-b border-slate-200 pb-6 mb-6">

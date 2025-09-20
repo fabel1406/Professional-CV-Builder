@@ -183,18 +183,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStartBuilding, t, language,
       <section ref={addToRefs} className="py-20 bg-slate-50 opacity-0">
           <div className="container mx-auto px-6 text-center">
               <h3 className="text-4xl font-bold mb-12">{t.templatesTitle}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                   <div className="bg-white rounded-lg shadow-lg p-4 transition-transform transform hover:-translate-y-2">
-                      <img src="https://i.imgur.com/sGemHll.png" alt="Modern Template" className="rounded-md mb-4" />
+                      <img src="https://i.imgur.com/kLOU9MN.png" alt="Modern Template" className="rounded-md mb-4" />
                       <h4 className="text-xl font-semibold">{t.templateModern}</h4>
                   </div>
                   <div className="bg-white rounded-lg shadow-lg p-4 transition-transform transform hover:-translate-y-2">
-                      <img src="https://i.imgur.com/xMhiNr5.png" alt="Classic Template" className="rounded-md mb-4" />
+                      <img src="https://i.imgur.com/XR0MBpJ.png" alt="Classic Template" className="rounded-md mb-4" />
                       <h4 className="text-xl font-semibold">{t.templateClassic}</h4>
                   </div>
                    <div className="bg-white rounded-lg shadow-lg p-4 transition-transform transform hover:-translate-y-2">
-                      <img src="https://i.imgur.com/bYkSBD3.png" alt="Creative Template" className="rounded-md mb-4" />
+                      <img src="https://i.imgur.com/roFeE5X.png" alt="Creative Template" className="rounded-md mb-4" />
                       <h4 className="text-xl font-semibold">{t.templateCreative}</h4>
+                  </div>
+                  <div className="bg-white rounded-lg shadow-lg p-4 transition-transform transform hover:-translate-y-2">
+                      <img src="https://i.imgur.com/YJtQvLw.png" alt="Professional Template" className="rounded-md mb-4" />
+                      <h4 className="text-xl font-semibold">{t.templateProfessional}</h4>
                   </div>
               </div>
           </div>
