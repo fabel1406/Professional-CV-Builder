@@ -38,14 +38,22 @@ const CVBuilder: React.FC<CVBuilderProps> = ({ t, language, setLanguage, onGoBac
   };
   
   const handleGenerateSummary = async () => {
+    const filledExperience = cvData.experience.filter(e => e.title && e.company);
+    const filledSkills = cvData.skills.filter(s => s.name);
+
+    if (filledExperience.length === 0 && filledSkills.length === 0) {
+      alert(t.aiEmptyError);
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      const ai = new GoogleGenAI({apiKey: process.env.API_KEY as string});
+      const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
       const prompt = `Based on the following CV data, write a professional and compelling summary of 2-3 sentences in ${language === 'es' ? 'Spanish' : 'English'}:
-      Name: ${cvData.personalInfo.name}
-      Title: ${cvData.personalInfo.title}
-      Experience: ${cvData.experience.map(e => `${e.title} at ${e.company}`).join(', ')}
-      Skills: ${cvData.skills.map(s => s.name).join(', ')}`;
+      Name: ${cvData.personalInfo.name || 'the candidate'}
+      Title: ${cvData.personalInfo.title || 'a professional'}
+      Experience: ${filledExperience.map(e => `${e.title} at ${e.company}`).join(', ')}
+      Skills: ${filledSkills.map(s => s.name).join(', ')}`;
 
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -58,7 +66,7 @@ const CVBuilder: React.FC<CVBuilderProps> = ({ t, language, setLanguage, onGoBac
       }
     } catch (error) {
       console.error("Error generating summary:", error);
-      alert("Failed to generate summary. Please check your API key and try again.");
+      alert(t.aiError);
     } finally {
       setIsGenerating(false);
     }

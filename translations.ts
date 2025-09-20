@@ -120,6 +120,8 @@ export const en = {
   print: 'Print',
   loading: 'Loading...',
   generateWithAI: 'Generate with AI',
+  aiError: 'Failed to generate summary. Please try again.',
+  aiEmptyError: 'Please add some experience or skills first to generate an AI summary.',
 };
 
 export const es: Translations = {
@@ -242,6 +244,8 @@ export const es: Translations = {
   print: 'Imprimir',
   loading: 'Cargando...',
   generateWithAI: 'Generar con IA',
+  aiError: 'No se pudo generar el resumen. Por favor, inténtalo de nuevo.',
+  aiEmptyError: 'Por favor, añade algo de experiencia o habilidades primero para generar un resumen con IA.',
 };
 
 export type Translations = typeof en;
