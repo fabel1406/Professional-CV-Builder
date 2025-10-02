@@ -1,6 +1,6 @@
 
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import CVForm from './CVForm';
 import CVPreview from './CVPreview';
@@ -20,6 +20,8 @@ import XMarkIcon from './icons/XMarkIcon';
 import ChevronDownIcon from './icons/ChevronDownIcon';
 import CheckIcon from './icons/CheckIcon';
 import FontSizeIcon from './icons/FontSizeIcon';
+import UndoIcon from './icons/UndoIcon';
+import RedoIcon from './icons/RedoIcon';
 
 interface CVBuilderProps {
   t: Translations;
@@ -56,8 +58,59 @@ const fontStacks: Record<FontFamily, string> = {
   'Trebuchet MS': '"Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif',
 };
 
+// Custom hook for managing state with undo/redo capabilities
+const useHistoryState = <T extends object>(initialState: T) => {
+  const [history, setHistory] = useState<T[]>([initialState]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const setState = useCallback((action: T | ((prevState: T) => T)) => {
+    const currentState = history[currentIndex];
+    const newState = typeof action === 'function'
+      ? (action as (prevState: T) => T)(currentState)
+      : action;
+    
+    // Simple deep compare to avoid adding identical states
+    if (JSON.stringify(currentState) === JSON.stringify(newState)) {
+        return;
+    }
+
+    const newHistory = history.slice(0, currentIndex + 1);
+    newHistory.push(newState);
+    setHistory(newHistory);
+    setCurrentIndex(newHistory.length - 1);
+  }, [currentIndex, history]);
+
+  const undo = useCallback(() => {
+    if (currentIndex > 0) {
+      setCurrentIndex(i => i - 1);
+    }
+  }, [currentIndex]);
+
+  const redo = useCallback(() => {
+    if (currentIndex < history.length - 1) {
+      setCurrentIndex(i => i + 1);
+    }
+  }, [currentIndex, history.length]);
+
+  return {
+    state: history[currentIndex],
+    setState,
+    undo,
+    redo,
+    canUndo: currentIndex > 0,
+    canRedo: currentIndex < history.length - 1,
+  };
+};
+
 const CVBuilder: React.FC<CVBuilderProps> = ({ t, language, setLanguage, onGoBack }) => {
-  const [cvData, setCvData] = useState<CVData>(initialCVData);
+  const {
+    state: cvData,
+    setState: setCvData,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useHistoryState<CVData>(initialCVData);
   const [template, setTemplate] = useState<Template>('professional');
   const [fontFamily, setFontFamily] = useState<FontFamily>('Helvetica');
   const [textAlign, setTextAlign] = useState<TextAlign>('left');
@@ -209,6 +262,27 @@ const CVBuilder: React.FC<CVBuilderProps> = ({ t, language, setLanguage, onGoBac
         <div className="container mx-auto p-4">
             <div ref={toolbarRef} className="bg-white p-3 rounded-lg shadow-lg mb-8 sticky top-[61px] z-10 flex items-center justify-between flex-wrap gap-4 border-t border-slate-200">
                 <div className="flex items-center gap-2 flex-wrap">
+                    {/* Undo/Redo Buttons */}
+                    <div className="flex items-center">
+                        <button
+                            onClick={undo}
+                            disabled={!canUndo}
+                            className="p-2 rounded-md text-slate-600 hover:bg-slate-100 disabled:text-slate-300 disabled:cursor-not-allowed transition"
+                            title="Undo"
+                        >
+                            <UndoIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={redo}
+                            disabled={!canRedo}
+                            className="p-2 rounded-md text-slate-600 hover:bg-slate-100 disabled:text-slate-300 disabled:cursor-not-allowed transition"
+                            title="Redo"
+                        >
+                            <RedoIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div className="h-6 w-px bg-slate-200 mx-1"></div>
+
                     {/* Template Dropdown */}
                     <div className="relative">
                         <button onClick={() => setActiveDropdown(activeDropdown === 'template' ? null : 'template')} className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-md shadow-sm hover:bg-slate-200 transition">
